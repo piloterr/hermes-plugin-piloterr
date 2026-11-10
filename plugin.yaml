@@ -1,0 +1,27 @@
+name: piloterr
+version: 1.0.0
+description: "Fetch web pages for the built-in web_extract tool through the Piloterr web scraping API, with optional JavaScript rendering or anti-bot unblocking."
+author: Piloterr
+license: MIT
+kind: backend
+requires_hermes: ">=0.21.6"
+provides_web_providers:
+  - piloterr
+provides_tools: []
+provides_hooks: []
+provides_middleware: []
+requires_env:
+  - name: PILOTERR_API_KEY
+    description: Piloterr API key
+    url: https://app.piloterr.com
+    secret: true
+config_schema:
+  api_key:
+    type: secret
+    env: PILOTERR_API_KEY
+    label: Piloterr API key
+  engine:
+    type: str
+    default: crawler
+    label: Engine
+    description: crawler (plain HTTP, cheapest), rendering (headless browser for JavaScript pages) or webunlocker (gets past anti-bot protection, most expensive).
