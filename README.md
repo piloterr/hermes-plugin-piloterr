@@ -205,6 +205,16 @@ The backend has one setting:
 |---|---|---|
 | `engine` | `crawler` | Engine for every `web_extract` call: `crawler`, `rendering` or `webunlocker`. |
 
+Set it in the plugin's settings form (Plugins tab of the Hermes desktop app), or in `~/.hermes/config.yaml`:
+
+```yaml
+plugins:
+  entries:
+    piloterr:
+      settings:
+        engine: rendering
+```
+
 The backend is extract only, so keep a search backend for `web_search` (or use `piloterr_google_search`). `piloterr_fetch_page` works with or without this setting, and it lets the model choose the engine for each page.
 
 ## Example prompts
