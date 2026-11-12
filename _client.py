@@ -11,7 +11,7 @@ from agent.secret_scope import get_secret
 
 BASE_URL = "https://api.piloterr.com"
 KEY_ENV = "PILOTERR_API_KEY"
-USER_AGENT = "hermes-plugin-piloterr/1.0.0"
+USER_AGENT = "hermes-plugin-piloterr/1.1.0"
 TIMEOUT_SECONDS = 120
 
 

@@ -1,13 +1,67 @@
 name: piloterr
-version: 1.0.0
-description: "Fetch web pages for the built-in web_extract tool through the Piloterr web scraping API, with optional JavaScript rendering or anti-bot unblocking."
+version: 1.1.0
+description: "Web scraping for Hermes: fetch any page with the crawler, rendering or webunlocker engine, and get structured data from Google, Bing, Brave, LinkedIn, Amazon, eBay, Walmart, Instagram, X, Crunchbase, Indeed, Yelp, Zillow and more, through the Piloterr API. Also a web_extract backend."
 author: Piloterr
 license: MIT
 kind: backend
 requires_hermes: ">=0.21.6"
 provides_web_providers:
   - piloterr
-provides_tools: []
+provides_tools:
+  - piloterr_fetch_page
+  - piloterr_website_antibot
+  - piloterr_website_technology
+  - piloterr_website_contacts
+  - piloterr_google_search
+  - piloterr_google_news
+  - piloterr_google_images
+  - piloterr_google_videos
+  - piloterr_google_shopping
+  - piloterr_google_maps
+  - piloterr_google_jobs
+  - piloterr_bing_search
+  - piloterr_brave_search
+  - piloterr_duckduckgo_search
+  - piloterr_yahoo_search
+  - piloterr_linkedin_company
+  - piloterr_linkedin_profile
+  - piloterr_linkedin_post
+  - piloterr_linkedin_job_search
+  - piloterr_linkedin_job
+  - piloterr_instagram_user
+  - piloterr_instagram_post
+  - piloterr_x_profile
+  - piloterr_x_post
+  - piloterr_pinterest_user
+  - piloterr_github_user
+  - piloterr_amazon_search
+  - piloterr_amazon_product
+  - piloterr_amazon_offers
+  - piloterr_ebay_search
+  - piloterr_ebay_product
+  - piloterr_walmart_search
+  - piloterr_walmart_product
+  - piloterr_aliexpress_search
+  - piloterr_aliexpress_product
+  - piloterr_target_search
+  - piloterr_target_product
+  - piloterr_bestbuy_search
+  - piloterr_bestbuy_product
+  - piloterr_crunchbase_company
+  - piloterr_crunchbase_person
+  - piloterr_trustpilot_company
+  - piloterr_g2_product
+  - piloterr_similarweb_domain
+  - piloterr_indeed_job_search
+  - piloterr_indeed_job
+  - piloterr_glassdoor_company
+  - piloterr_yelp_search
+  - piloterr_yelp_business
+  - piloterr_yelp_reviews
+  - piloterr_expedia_hotels
+  - piloterr_zillow_search
+  - piloterr_zillow_property
+  - piloterr_usage
 provides_hooks: []
 provides_middleware: []
 requires_env:

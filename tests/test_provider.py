@@ -163,3 +163,135 @@ def test_unexpected_response(api_key, calls):
     calls.respond({"html": "<p>hi</p>"})
     [doc] = provider().extract(["https://example.com"])
     assert "HTML" in doc["error"]
+
+
+# Tools
+
+
+def tools(settings=None):
+    ctx = FakeContext(settings)
+    plugin.register(ctx)
+    return ctx.tools
+
+
+def run(name, args):
+    return json.loads(tools()[name]["handler"](args))
+
+
+def test_register_adds_the_fetch_tool_and_every_endpoint_tool():
+    registered = tools()
+    from hermes_plugin_piloterr.schemas import TOOLS
+
+    assert set(registered) == {"piloterr_fetch_page", *TOOLS}
+    assert {t["toolset"] for t in registered.values()} == {"piloterr"}
+    for name, tool in registered.items():
+        assert tool["schema"]["name"] == name
+        assert tool["schema"]["parameters"]["type"] == "object"
+
+
+def test_manifest_lists_every_tool():
+    from pathlib import Path
+
+    manifest = (Path(__file__).resolve().parents[1] / "plugin.yaml").read_text()
+    listed = {line.strip()[2:] for line in manifest.splitlines() if line.strip().startswith("- piloterr_")}
+    assert listed == set(tools())
+
+
+def test_tools_hidden_without_key(no_key):
+    assert all(tool["check_fn"]() is False for tool in tools().values())
+
+
+def test_fetch_page_defaults_to_crawler_text(api_key, calls):
+    calls.respond(PAGE)
+    result = run("piloterr_fetch_page", {"url": "https://example.com"})
+    request = calls[0]["request"]
+    assert request.full_url.startswith("https://api.piloterr.com/v2/website/crawler?")
+    assert query(request) == {"query": "https://example.com"}
+    assert request.get_header("X-api-key") == "test-key"
+    assert result["engine"] == "crawler" and result["credits"] == 1
+    assert result["title"] == "Example Domain"
+    assert "This domain is for examples." in result["content"]
+    assert "track()" not in result["content"]
+    assert result["truncated"] is False
+
+
+def test_fetch_page_rendering_sends_wait_options(api_key, calls):
+    calls.respond(PAGE)
+    result = run(
+        "piloterr_fetch_page",
+        {"url": "https://example.com", "engine": "rendering", "wait_in_seconds": 3, "wait_for": "#app", "block_ads": True},
+    )
+    request = calls[0]["request"]
+    assert "/v2/website/rendering?" in request.full_url
+    assert query(request) == {"query": "https://example.com", "wait_in_seconds": "3", "wait_for": "#app", "block_ads": "True"}
+    assert result["credits"] == 2
+
+
+def test_fetch_page_webunlocker_ignores_rendering_options(api_key, calls):
+    calls.respond(PAGE)
+    result = run("piloterr_fetch_page", {"url": "https://example.com", "engine": "webunlocker", "wait_for": "#app"})
+    assert "/v2/website/webunlocker?" in calls[0]["request"].full_url
+    assert query(calls[0]["request"]) == {"query": "https://example.com"}
+    assert result["credits"] == 3
+
+
+def test_fetch_page_html_and_truncation(api_key, calls):
+    calls.respond(PAGE)
+    result = run("piloterr_fetch_page", {"url": "https://example.com", "format": "html", "max_characters": 20})
+    assert result["content"] == PAGE[:20]
+    assert result["truncated"] is True
+
+
+def test_fetch_page_empty_text_suggests_another_engine(api_key, calls):
+    calls.respond("<html><head><title>App</title></head><body><div id='root'></div><script>boot()</script></body></html>")
+    result = run("piloterr_fetch_page", {"url": "https://example.com"})
+    assert result["content"] == ""
+    assert "rendering" in result["hint"]
+
+
+@pytest.mark.parametrize(
+    "args, message",
+    [
+        ({"url": "example.com"}, "http://"),
+        ({"url": "https://example.com", "engine": "chrome"}, "engine must be one of"),
+        ({"url": "https://example.com", "format": "pdf"}, "format must be"),
+        ({"url": "https://example.com", "max_characters": 0}, "max_characters"),
+    ],
+)
+def test_fetch_page_rejects_bad_arguments_without_a_request(api_key, calls, args, message):
+    calls.respond(PAGE)
+    result = run("piloterr_fetch_page", args)
+    assert message in result["error"]
+    assert calls == []
+
+
+def test_fetch_page_api_error(api_key, calls):
+    calls.fail(403, {"error": "Domain not allowed for webunlocker"})
+    result = run("piloterr_fetch_page", {"url": "https://example.com", "engine": "webunlocker"})
+    assert result["error"] == "Piloterr: Domain not allowed for webunlocker"
+
+
+def test_endpoint_tool_sends_arguments(api_key, calls):
+    calls.respond({"name": "Piloterr", "staff_count": 12})
+    result = run("piloterr_linkedin_company", {"query": "piloterr", "domain": ""})
+    request = calls[0]["request"]
+    assert request.full_url.startswith("https://api.piloterr.com/v2/linkedin/company/info?")
+    assert query(request) == {"query": "piloterr"}
+    assert result == {"name": "Piloterr", "staff_count": 12}
+
+
+def test_endpoint_tool_requires_its_inputs(api_key, calls):
+    result = run("piloterr_amazon_product", {"domain": "fr"})
+    assert result == {"error": "Piloterr: query is required"}
+    assert calls == []
+
+
+def test_endpoint_tool_api_error(api_key, calls):
+    calls.fail(402, {"error": {"message": "Not enough credits"}})
+    assert run("piloterr_google_search", {"query": "web scraping"}) == {"error": "Piloterr: Not enough credits"}
+
+
+def test_endpoint_tool_without_key(no_key, calls):
+    result = run("piloterr_google_search", {"query": "web scraping"})
+    assert "PILOTERR_API_KEY" in result["error"]
+    assert calls == []
